@@ -639,8 +639,8 @@ module Gollum
     # query - The string to search for
     #
     # Returns an Array with Objects of page name and count of matches
-    def search(query)
-      options = {:path => page_file_dir, :ref => ref}
+    def search(query, opts = {})
+      options = {:path => page_file_dir, :ref => ref, :exclude => opts[:exclude]}
       results = {}
       @repo.git.grep(query, options).each do |hit|
         name = hit[:name]
@@ -658,7 +658,9 @@ module Gollum
         file_name          = Page::valid_page_name?(path) ? path.chomp(::File.extname(path)) : path
         # If there's not already a result for file_name then
         # the value is nil and nil.to_i is 0.
-        results[file_name] = results[file_name].to_i + 1;
+        unless opts[:exclude] && opts[:exclude].any?{|prefix| file_name.start_with?(prefix)}
+          results[file_name] = results[file_name].to_i + 1;
+        end
       end
 
       results.map do |key, val|
